@@ -8,6 +8,7 @@ a libcurl c++ warpper for http
 # 进展
 * 实现了简单的get和post封装。
 * 支持https
+* @2020-10-29 add DELETE PUT method ， but no test
 # 待进行
 实践中可能还需要以下几个
 
