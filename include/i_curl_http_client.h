@@ -35,6 +35,9 @@ public:
 	virtual bool setCert(const std::string& certPath) = 0;
 	virtual bool get(const std::string& url) = 0;
 	virtual bool post(const std::string& url,const std::string& postData) = 0;
+	virtual bool put(const std::string& url, const std::string& putData) = 0;
+	virtual bool delete_(const std::string& url) = 0;
+	
 public:
 	virtual std::string getResponse() = 0;
 };

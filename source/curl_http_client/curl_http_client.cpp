@@ -68,6 +68,33 @@ bool CurlHttpClient::setResData()
 	return ret == CURLE_OK ? true : false;
 }
 
+size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
+{
+	std::pair<size_t, const std::string*>& buffPair = *((std::pair<size_t, const std::string*>*)userdata);
+	size_t realSize = size * nmemb;
+	do
+	{
+		if (realSize == 0)
+		{
+			break;
+		}
+		if (realSize + buffPair.first < buffPair.second->size())
+		{
+			memcpy(ptr, (const void*)(buffPair.second->data() + buffPair.first), realSize);
+			buffPair.first += realSize;
+			break;
+		}
+
+		realSize = buffPair.second->size() - buffPair.first;
+		if (realSize == 0)
+		{
+			break;
+		}
+		memcpy(ptr, (const void*)(buffPair.second->data() + buffPair.first), realSize);
+	} while (false);
+
+	return realSize;
+}
 bool CurlHttpClient::exec(const std::string & url)
 {
 	return false;
@@ -144,11 +171,51 @@ bool CurlHttpClient::post(const std::string & url, const std::string & postData)
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_URL, url.c_str());
 	//设置方法
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_POST, 1);
-	//
+	//设置post数据，此处是不会copy的
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_POSTFIELDS, postData.c_str());
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_POSTFIELDSIZE_LARGE,(curl_off_t)postData.length());
 	//执行
 	ret = curl_easy_perform(m_pHandle);
+	return ret == CURLE_OK ? true : false;
+}
+
+bool CurlHttpClient::put(const std::string & url, const std::string & putData)
+{
+	CURLcode ret = CURLE_OK;
+	//设置标头
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_HTTPHEADER, m_headers);
+	//设置回调
+	setResData();
+	//设置url
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_URL, url.c_str());
+	//设置方法 
+	//CURLOPT_PUT This option is deprecated since version 7.12.1. Use CURLOPT_UPLOAD!
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_UPLOAD, 1);
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_READFUNCTION, read_callback);
+	
+	//设置传输数据
+	/* now specify which pointer to pass to our callback */
+	std::pair<size_t, const std::string*> buffPair;
+	buffPair.first = 0;
+	buffPair.second = &putData;
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_READDATA, &buffPair);
+
+	/* Set the size of the file to upload */
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)putData.length());
+	return ret == CURLE_OK ? true : false;
+}
+
+bool CurlHttpClient::delete_(const std::string & url)
+{
+	CURLcode ret = CURLE_OK;
+	//设置标头
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_HTTPHEADER, m_headers);
+	//设置回调
+	setResData();
+	//设置url
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_URL, url.c_str());
+	//设置方法 
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_CUSTOMREQUEST, "DELETE");
 	return ret == CURLE_OK ? true : false;
 }
 
