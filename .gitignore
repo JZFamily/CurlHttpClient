@@ -9,7 +9,14 @@ install_manifest.txt
 compile_commands.json
 CTestTestfile.cmake
 _deps
-build/
-lib/
-pdb/
+
+*.lib
+*.ilk
+*.exe
+
+
+/build/
+/lib/
+/pdb/
 .vscode
+src/
