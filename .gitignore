@@ -18,5 +18,7 @@ _deps
 /build/
 /lib/
 /pdb/
+
 .vscode
 src/
+/thirdlib/boost_1_74_0
