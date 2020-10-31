@@ -50,7 +50,9 @@ int main()
 	json configData;
 	try
 	{
-		std::fstream f(configfullPath);
+		std::fstream f;
+		f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+		f.open(configfullPath);
 		configData << f;
 	}
 	catch (const std::exception& e)
