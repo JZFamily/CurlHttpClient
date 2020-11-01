@@ -21,4 +21,5 @@ _deps
 
 .vscode
 src/
-/thirdlib/boost_1_74_0/
+lib/
+bin/
