@@ -185,6 +185,41 @@ int main()
 
 		}
 	}
+		//GET /api/v1/watch/events
+	{
+		std::string tmpUrl = url;
+		std::string path = "/api/v1/watch/events";
+		tmpUrl += path;
 
+		//delete
+		if (pICurlHttpClient->get(tmpUrl))
+		{
+			std::cout << pICurlHttpClient->getResponse() << std::endl;
+			std::string filename = getCurrentTimeStamp();
+			try
+			{
+				std::stringstream ss;
+				ss.str(pICurlHttpClient->getResponse());
+				json data;
+				data << ss;
+				std::fstream f;
+				std::string fullpath = execDirPath;
+				fullpath += "/";
+				fullpath += "config/";
+				fullpath += "hhehe_watch";
+				fullpath += ".json";
+				f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+				f.open(fullpath, std::ios_base::out);
+				f << data;
+				
+			}
+			catch (const std::exception& e)
+			{
+				std::cerr << e.what() << std::endl;
+				return 0;
+			}
+
+		}
+	}
 	releaseCurlHttpClient(pICurlHttpClient);
 }
