@@ -23,4 +23,4 @@ _deps
 src/
 lib/
 bin/
-include/boost/*
+thirdlib/boost_1_74_0/include/boost/*
