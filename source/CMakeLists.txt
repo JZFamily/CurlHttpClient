@@ -1,3 +1,4 @@
 add_subdirectory(curl_http_client)
 add_subdirectory(test)
 add_subdirectory(test_k8s)
+add_subdirectory(test_email)

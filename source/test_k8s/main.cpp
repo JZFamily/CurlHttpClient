@@ -13,6 +13,31 @@
 #include <unistd.h>
 #endif // WIN32
 
+bool execCmd(const std::string& cmd, std::string retStr)
+{
+#if WIN32
+
+	system(cmd.c_str());
+#else
+	char buf[512] = {0};
+	FILE *pFile = popen(cmd.c_tr(),"r");
+	if (pFile == nullptr)
+	{
+		return false;
+	}
+	while (fgets(buf, sizeof(buf),pFile) != nullptr)
+	{
+		retStr.append(buf);
+	}
+	std::cerr << retStr << std::endl;
+	pclose(pFile);
+#endif // WIN32
+	return true;
+}
+
+//更改工作目录和获取工作目录
+//chdir()
+//getcwd()
 bool getExePath(std::string& exePath)
 {
 	const size_t  MAX_PATH_LENGTH = 260;
@@ -75,7 +100,7 @@ std::string getCurrentTimeStamp()
 		% (tp.time_since_epoch().count() % 1000)));
 }
 
-bool append( std::string& url, const std::pair<std::string, std::string>& paramPair, bool first = false)
+bool appendUrlParam( std::string& url, const std::pair<std::string, std::string>& paramPair, bool first = false)
 {
 	if (first)
 	{
