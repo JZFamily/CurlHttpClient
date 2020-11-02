@@ -1,6 +1,12 @@
 #include "i_curl_http_client.h"
 #include <iostream>
 
+//imap-search
+//imap-noop
+//imap-list
+//imap-create
+//imap-delete
+//imap-copy
 int main()
 {
 	ICurlHttpClient *pICurlHttpClient = createCurlHttpClient();

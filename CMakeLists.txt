@@ -18,6 +18,8 @@ message("CMAKE_VS_PLATFORM_TOOLSET: ${CMAKE_VS_PLATFORM_TOOLSET}")
 
 set(THIRD_LIB_PATH "${PROJECT_SOURCE_DIR}/thirdlib")
 set(CURL_INCLUDE_PATH "${THIRD_LIB_PATH}/curl-7.70.0/include")
+set(BOOST_INCLUDE_PATH "${THIRD_LIB_PATH}/boost_1_74_0/include")
+set(NLOHMANN_INCLUDE_PATH "${THIRD_LIB_PATH}/nlohmann/include")
 if(WIN32)
 #此时默认win64 
 #启用自定义工程文件夹
@@ -31,6 +33,8 @@ set(CMAKE_ARCHIVE_OUTPUT_DIRECTORY "${PROJECT_SOURCE_DIR}/lib/win64")
 
 #配置第三方库目录
 set(CURL_LIBRARY_PATH "${THIRD_LIB_PATH}/curl-7.70.0/lib/win64")
+set(BOOST_LIBRARY_PATH "${THIRD_LIB_PATH}/boost_1_74_0/lib/win64")
+
 else()
 #linux
 endif()

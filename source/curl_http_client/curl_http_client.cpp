@@ -1,5 +1,5 @@
 #include "curl_http_client.h"
-
+#include <iostream>
 extern "C"
 {
 	ICurlHttpClient * createCurlHttpClient()
@@ -52,6 +52,7 @@ size_t CurlHttpClient::write_callback(char * ptr, size_t size, size_t nmemb, voi
 	}
 	size_t realsize = size * nmemb;
 	puserdata->append(ptr, realsize);
+	std::cerr << *puserdata << std::endl;
 	return realsize;
 }
 
@@ -68,7 +69,7 @@ bool CurlHttpClient::setResData()
 	return ret == CURLE_OK ? true : false;
 }
 
-size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
+size_t CurlHttpClient::read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
 {
 	std::pair<size_t, const std::string*>& buffPair = *((std::pair<size_t, const std::string*>*)userdata);
 	size_t realSize = size * nmemb;
@@ -95,10 +96,12 @@ size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata)
 
 	return realSize;
 }
+
 bool CurlHttpClient::exec(const std::string & url)
 {
 	return false;
 }
+
 bool CurlHttpClient::setVerbose(bool onoff)
 {
 	long lonoff = onoff == true ? 1 : 0;
@@ -202,6 +205,9 @@ bool CurlHttpClient::put(const std::string & url, const std::string & putData)
 
 	/* Set the size of the file to upload */
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)putData.length());
+
+	//执行
+	ret = curl_easy_perform(m_pHandle);
 	return ret == CURLE_OK ? true : false;
 }
 
@@ -216,6 +222,9 @@ bool CurlHttpClient::delete_(const std::string & url)
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_URL, url.c_str());
 	//设置方法 
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+	//执行
+	ret = curl_easy_perform(m_pHandle);
 	return ret == CURLE_OK ? true : false;
 }
 
