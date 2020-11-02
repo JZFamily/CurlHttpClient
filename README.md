@@ -9,6 +9,8 @@ a libcurl c++ warpper for http
 * 实现了简单的get和post封装。
 * 支持https
 * @2020-10-29 add DELETE PUT method ， but no test
+* @2020-10-31 添加了一个测试用例，实际是k8s客户端。如果能弄好打算工作时用一下。 json作配置文件，nlohmann json 库来解析。
+* @2020-11-01 添加了boost的使用，测试了delete接口
 # 待进行
 实践中可能还需要以下几个
 

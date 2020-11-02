@@ -202,6 +202,9 @@ bool CurlHttpClient::put(const std::string & url, const std::string & putData)
 
 	/* Set the size of the file to upload */
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_INFILESIZE_LARGE, (curl_off_t)putData.length());
+
+	//执行
+	ret = curl_easy_perform(m_pHandle);
 	return ret == CURLE_OK ? true : false;
 }
 
@@ -216,6 +219,9 @@ bool CurlHttpClient::delete_(const std::string & url)
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_URL, url.c_str());
 	//设置方法 
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_CUSTOMREQUEST, "DELETE");
+
+	//执行
+	ret = curl_easy_perform(m_pHandle);
 	return ret == CURLE_OK ? true : false;
 }
 
