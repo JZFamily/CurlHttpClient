@@ -39,6 +39,8 @@ public:
 	virtual bool appendHeader(const std::string& headerStr);
 	virtual bool resetHeader();
 	virtual bool setCert(const std::string& certPath);
+
+public:
 	virtual bool get(const std::string& url);
 	virtual bool post(const std::string& url, const std::string& postData);
 	virtual bool put(const std::string& url, const std::string& putData);
@@ -47,6 +49,7 @@ public:
 	virtual std::string getResponse() { return m_resData;};
 private:
 	static size_t write_callback(char *ptr, size_t size, size_t nmemb, void *userdata);
+	static size_t read_callback(void *ptr, size_t size, size_t nmemb, void *userdata);
 	bool setResData();
 private:
 	CURL *m_pHandle;

@@ -74,6 +74,26 @@ std::string getCurrentTimeStamp()
 		% tm->tm_sec
 		% (tp.time_since_epoch().count() % 1000)));
 }
+
+bool append( std::string& url, const std::pair<std::string, std::string>& paramPair, bool first = false)
+{
+	if (first)
+	{
+		url += "?";
+		url += paramPair.first;
+		url += "=";
+		url += paramPair.second;
+	}
+	else
+	{
+		url += "&";
+		url += paramPair.first;
+		url += "=";
+		url += paramPair.second;
+	}
+	return true;
+}
+
 int main()
 {
 	getCurrentTimeStamp();
@@ -148,7 +168,7 @@ int main()
 	//		std::cout << pICurlHttpClient->getResponse() << std::endl;
 	//	}
 	//}
-	
+	std::string resourceVersion;
 	//GET  /api/v1/events
 	{
 		std::string tmpUrl = url;
@@ -175,7 +195,7 @@ int main()
 				f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
 				f.open(fullpath, std::ios_base::out);
 				f << data;
-				
+				resourceVersion = std::string(data["metadata"]["resourceVersion"]);
 			}
 			catch (const std::exception& e)
 			{
@@ -185,12 +205,33 @@ int main()
 
 		}
 	}
-		//GET /api/v1/watch/events
+	
+	//GET /api/v1/watch/events
 	{
 		std::string tmpUrl = url;
 		std::string path = "/api/v1/watch/events";
 		tmpUrl += path;
+		{
+			std::pair<std::string, std::string> paramPair;
+			paramPair.first = "timeoutSeconds";
+			paramPair.second = std::to_string(60 * 5);
+			append(tmpUrl, paramPair, true);
+		}
+		
+		{
+			std::pair<std::string, std::string> paramPair;
+			paramPair.first = "resourceVersion";
+			paramPair.second = resourceVersion;
+			append(tmpUrl, paramPair);
+		}
+		{
+			std::pair<std::string, std::string> paramPair;
+			paramPair.first = "watch";
+			paramPair.second = "true";
+			append(tmpUrl, paramPair);
+		}
 
+		
 		//delete
 		if (pICurlHttpClient->get(tmpUrl))
 		{
