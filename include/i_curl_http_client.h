@@ -7,7 +7,7 @@
 /////////////////////////////////////////////////////////////////////////////////
 
 #include <string>
-
+#include <functional>
 #ifndef __I_CURL_HTTP_CLIENT_
 #define __I_CURL_HTTP_CLIENT_
 
@@ -37,9 +37,10 @@ public:
 	virtual bool post(const std::string& url,const std::string& postData) = 0;
 	virtual bool put(const std::string& url, const std::string& putData) = 0;
 	virtual bool delete_(const std::string& url) = 0;
-	
+	virtual bool setTCPKeepAlive(bool enable = false, long delay =60, long interwal = 60) = 0;
 public:
 	virtual std::string getResponse() = 0;
+	virtual void setResponseCallBack(std::function<void(const std::string&, std::string&)>callback = nullptr) = 0;
 };
 
  extern "C" DLL_API ICurlHttpClient * createCurlHttpClient();

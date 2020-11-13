@@ -3,9 +3,9 @@
 #include "curl/curl.h"
 
 
-//POP3·þÎñÆ÷: pop.126.com
-//	SMTP·þÎñÆ÷ : smtp.126.com
-//	IMAP·þÎñÆ÷ : imap.126.com
+//POP3ï¿½ï¿½ï¿½ï¿½ï¿½ï¿½: pop.126.com
+//	SMTPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : smtp.126.com
+//	IMAPï¿½ï¿½ï¿½ï¿½ï¿½ï¿½ : imap.126.com
 #include <stdio.h>
 #include <curl/curl.h>
 
@@ -25,14 +25,14 @@ int main(void)
 	if (curl) {
 		curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
 		/* Set username and password */
-		curl_easy_setopt(curl, CURLOPT_USERNAME, "hao931126@126.com");
-		curl_easy_setopt(curl, CURLOPT_PASSWORD, "jz931126");
+		curl_easy_setopt(curl, CURLOPT_USERNAME, "");
+		curl_easy_setopt(curl, CURLOPT_PASSWORD, "");
 
 		/* This is just the server URL */
 		//curl_easy_setopt(curl, CURLOPT_URL, "imap://imap.126.com");
 		//5446
 		curl_easy_setopt(curl, CURLOPT_URL,"imap://imap.126.com/INBOX");
-		//ºöÂÔÖ¤ÊéÐ£Ñé
+		//ï¿½ï¿½ï¿½ï¿½Ö¤ï¿½ï¿½Ð£ï¿½ï¿½
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, 0);
 		curl_easy_setopt(curl, CURLOPT_SSL_VERIFYHOST, 0);
 		curl_easy_setopt(curl, CURLOPT_CUSTOMREQUEST, "COPY 3 hello");

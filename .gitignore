@@ -24,3 +24,5 @@ src/
 lib/
 bin/
 thirdlib/boost_1_74_0/include/boost/*
+thirdlib/yaml-cpp-0.6.3/include
+thirdlib/zlib-1.2.11/include

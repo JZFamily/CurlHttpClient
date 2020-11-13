@@ -100,7 +100,7 @@ std::string getCurrentTimeStamp()
 		% (tp.time_since_epoch().count() % 1000)));
 }
 
-bool appendUrlParam( std::string& url, const std::pair<std::string, std::string>& paramPair, bool first = false)
+bool append( std::string& url, const std::pair<std::string, std::string>& paramPair, bool first = false)
 {
 	if (first)
 	{
