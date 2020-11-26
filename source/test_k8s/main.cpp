@@ -12,115 +12,101 @@
 #else // linux
 #include <unistd.h>
 #endif // WIN32
+#include "SQLiteCpp/SQLiteCpp.h"
+#include "SQLiteCpp/VariadicBind.h"
+#include "utility.h"
 
-bool execCmd(const std::string& cmd, std::string retStr)
-{
-#if WIN32
+#include "boost/smart_ptr/shared_ptr.hpp"
+#include "boost/core/null_deleter.hpp"
+#include "boost/log/common.hpp"
+#include "boost/log/exceptions.hpp"
+#include "boost/log/core.hpp"
+#include "boost/log/sinks.hpp"
+#include "boost/log/expressions.hpp"
+#include "boost/log/attributes.hpp"
+#include "boost/log/trivial.hpp"
+#include <boost/log/sinks/async_frontend.hpp>
+#include <thread>
+#include <chrono>
+namespace logging = boost::log;
+namespace src = boost::log::sources;
+namespace expr = boost::log::expressions;
+namespace sinks = boost::log::sinks;
+namespace keywords = boost::log::keywords;
+namespace attrs = boost::log::attributes;
 
-	system(cmd.c_str());
-#else
-	char buf[512] = {0};
-	FILE *pFile = popen(cmd.c_tr(),"r");
-	if (pFile == nullptr)
-	{
-		return false;
-	}
-	while (fgets(buf, sizeof(buf),pFile) != nullptr)
-	{
-		retStr.append(buf);
-	}
-	std::cerr << retStr << std::endl;
-	pclose(pFile);
-#endif // WIN32
-	return true;
-}
 
-//更改工作目录和获取工作目录
-//chdir()
-//getcwd()
-bool getExePath(std::string& exePath)
-{
-	const size_t  MAX_PATH_LENGTH = 260;
-	char bufferFileName[MAX_PATH_LENGTH] = {0};
-#if WIN32
-	
-	DWORD ret = GetModuleFileNameA(nullptr, bufferFileName, MAX_PATH_LENGTH);
-	if (ret <= 0 || ret >= MAX_PATH_LENGTH)
-	{
-		return false;
-	}
-#else
-	ssize_t ret = readlink("/proc/self/exe", bufferFileName, MAX_PATH_LENGTH);
-	if (ret <= 0 || ret >= MAX_PATH_LENGTH)
-	{
-		return false;
-	}
-#endif // WIN32
-	exePath = bufferFileName;
-	std::cerr << exePath << std::endl;
-	return true;
-}
-//std::string&& getCurrentTimeStamp()
+//enum severity_level
 //{
-//	auto tp = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-//	time_t tt = std::chrono::system_clock::to_time_t(tp);
-//	struct tm * tm = localtime(&tt);
-//	std::stringstream ss;
-//	ss << std::setiosflags(std::ios::right) << std::setw(4) << tm->tm_year + 1900 << "-" 
-//		<< std::setfill('0') << std::setw(2)  << tm->tm_mon+1 << "-" << tm->tm_mday << " "
-//		<< std::setw(2) << tm->tm_hour <<":" << std::setw(2) << tm->tm_min << ":"<< std::setw(2) << tm->tm_sec
-//		<< "." << tp.time_since_epoch().count()%1000;
-//	std::cerr << ss.str()  << std::endl;
-//	return ss.str();
+//	normal,
+//	notification,
+//	warning,
+//	error,
+//	critical
+//};
+//std::ostream &operator<<(std::ostream &strm, severity_level level)
+//{
+//	static const char *strings[] =
+//	{
+//		"normal",
+//		"notification",
+//		"warning",
+//		"error",
+//		"critical" };
+//
+//	if (static_cast<std::size_t>(level) < sizeof(strings) / sizeof(*strings))
+//		strm << strings[level];
+//	else
+//		strm << static_cast<int>(level);
+//
+//	return strm;
 //}
-
-//返回的时间戳无法当作文件名无论是2020-11-01 23:36:12.111 还是2020-11-01-23:36:12.111
-std::string getCurrentTimeStamp()
-{
-	using format = boost::format;
-	auto tp = std::chrono::time_point_cast<std::chrono::milliseconds>(std::chrono::system_clock::now());
-	time_t tt = std::chrono::system_clock::to_time_t(tp);
-	struct tm * tm = localtime(&tt);
-	format ft("%1$04d-%2$02d-%3$02d %4$02d:%5$02d:%6$02d.%7$03d");
-	std::cerr << boost::str(ft 
-		% (tm->tm_year + 1900) 
-		% (tm->tm_mon + 1) 
-		% tm->tm_mday 
-		% tm->tm_hour 
-		% tm->tm_min 
-		% tm->tm_sec 
-		% (tp.time_since_epoch().count() % 1000)) << std::endl;
-	return std::move(boost::str(ft
-		% (tm->tm_year + 1900)
-		% (tm->tm_mon + 1)
-		% tm->tm_mday
-		% tm->tm_hour
-		% tm->tm_min
-		% tm->tm_sec
-		% (tp.time_since_epoch().count() % 1000)));
-}
-
-bool append( std::string& url, const std::pair<std::string, std::string>& paramPair, bool first = false)
-{
-	if (first)
-	{
-		url += "?";
-		url += paramPair.first;
-		url += "=";
-		url += paramPair.second;
-	}
-	else
-	{
-		url += "&";
-		url += paramPair.first;
-		url += "=";
-		url += paramPair.second;
-	}
-	return true;
-}
-
+//
+//typedef sinks::asynchronous_sink<sinks::text_ostream_backend, sinks::bounded_fifo_queue<1000, sinks::drop_on_overflow>> sink_t;
+//
+//boost::shared_ptr<sink_t> init_logging()
+//{
+//	logging::add_common_attributes();
+//	boost::shared_ptr<logging::core> core = logging::core::get();
+//	boost::shared_ptr<sinks::text_ostream_backend> backend = boost::make_shared<sinks::text_ostream_backend>();
+//	boost::shared_ptr<sink_t> sink(new sink_t(backend));
+//	core->add_sink(sink);
+//	core->add_global_attribute("ThreadID", attrs::current_thread_id());
+//	core->add_global_attribute("Process", attrs::current_process_name());
+//	sink->set_filter(expr::attr<severity_level>("Severity") >= warning);
+//	sink->set_formatter(
+//		expr::stream
+//		<< "["
+//		<< expr::format_date_time<boost::posix_time::ptime>("TimeStamp", "%Y-%m-%d %H:%M:%S.%f") << "]["
+//		<< expr::attr<attrs::current_thread_id::value_type>("ThreadID") << ":"
+//		<< expr::attr<unsigned int>("LineID") << "]["
+//		<< expr::attr<std::string>("Process")
+//		<< "][" << expr::attr<severity_level>("Severity")
+//		<< "] "
+//		<< ":" << expr::smessage);
+//	{
+//		sink_t::locked_backend_ptr p = sink->locked_backend();
+//		p->add_stream(boost::shared_ptr<std::ostream>(&std::clog, boost::null_deleter()));
+//	}
+//	return sink;
+//}
+//
+//void stop_logging(boost::shared_ptr<sink_t> &sink)
+//{
+//	boost::shared_ptr<logging::core> core = logging::core::get();
+//	// Remove the sink from the core, so that no records are passed to it
+//	core->remove_sink(sink);
+//	// Break the feeding loop
+//	sink->stop();
+//	// Flush all log records that may have left buffered
+//	sink->flush();
+//
+//	sink.reset();
+//}
 int main()
 {
+	std::string logPath = getExecPath();
+
 	getCurrentTimeStamp();
 	std::string exePath;
 	if (!getExePath(exePath))
@@ -150,24 +136,36 @@ int main()
 		return 0;
 	}
 
-	ICurlHttpClient *pICurlHttpClient = createCurlHttpClient();
-	//���õ���ģʽ
+	std::string sqlitePath;
+	sqlitePath = path.parent_path().string<std::string>();
+	sqlitePath += "/data/test.db";
+	SQLite::Database db(sqlitePath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+	try
+	{
+		if (!db.tableExists("k8sevents"))
+		{
+			db.exec("CREATE TABLE k8sevents (time varchar(128), value TEXT)");
+		}
+	}
+	catch (const std::exception& e)
+	{
+		std::cerr << e.what() << std::endl;
+	}
+
+	std::unique_ptr<ICurlHttpClient, std::function<void(ICurlHttpClient*)>> pICurlHttpClient(createCurlHttpClient(),releaseCurlHttpClient);
+	
 	pICurlHttpClient->setVerbose(true);
 
-
-	//�����Զ���ͷ
-	std::string url = "https://";
-	std::string doMain = configData["domain"];
-	url += doMain;
+	pICurlHttpClient->setTCPKeepAlive(true);
+	UrlObject urlObj("https", configData["domain"]);
 
 	std::string token = "Authorization: Bearer ";
 	token += std::string(configData["token"]);
 	pICurlHttpClient->appendHeader(token);
 
-
-	//����cert·�����������֤����֤
 	pICurlHttpClient->setCert("");
 	
+	std::string namespaceStr = configData["namespace"];
 	//get node list
 	//{
 	//	std::string tmpUrl = url;
@@ -193,99 +191,183 @@ int main()
 	//		std::cout << pICurlHttpClient->getResponse() << std::endl;
 	//	}
 	//}
-	std::string resourceVersion;
-	//GET  /api/v1/events
+	while (true)
 	{
-		std::string tmpUrl = url;
-		std::string path = "/api/v1/events";
-		tmpUrl += path;
-
-		//delete
-		if (pICurlHttpClient->get(tmpUrl))
+		std::string resourceVersion;
+		//GET  /api/v1/events
 		{
-			std::cout << pICurlHttpClient->getResponse() << std::endl;
-			std::string filename = getCurrentTimeStamp();
-			try
+			urlObj.setUrl("/api/v1/events");
+			if (pICurlHttpClient->get(urlObj))
 			{
-				std::stringstream ss;
-				ss.str(pICurlHttpClient->getResponse());
-				json data;
-				data << ss;
-				std::fstream f;
-				std::string fullpath = execDirPath;
-				fullpath += "/";
-				fullpath += "config/";
-				fullpath += "hhehe";
-				fullpath += ".json";
-				f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-				f.open(fullpath, std::ios_base::out);
-				f << data;
-				resourceVersion = std::string(data["metadata"]["resourceVersion"]);
+				try
+				{
+					std::cout << pICurlHttpClient->getResponse() << std::endl;
+					json resData;
+					std::stringstream ss(pICurlHttpClient->getResponse());
+					resData << ss;
+					resourceVersion = std::string(resData["metadata"]["resourceVersion"]);
+					std::string filename = getCurrentTimeStamp();
+					{
+						SQLite::Statement query(db, "INSERT INTO k8sevents VALUES (?, ?)");
+						SQLite::bind(query,filename,resData.dump());
+						int nb = query.exec();
+					}
+				}
+				catch (const std::exception& e)
+				{
+					std::this_thread::sleep_for(std::chrono::seconds(1));
+					continue;
+				}
 			}
-			catch (const std::exception& e)
-			{
-				std::cerr << e.what() << std::endl;
-				return 0;
-			}
+		}
 
+		//GET /api/v1/watch/events
+		{
+			urlObj.setUrl("/api/v1/watch/events");
+			urlObj.appendUrlParam({"resourceVersion",resourceVersion},"?");
+			urlObj.appendUrlParam({"watch","true"});
+			pICurlHttpClient->setResponseCallBack([&](const std::string& res, std::string& resStr) {
+				std::string bakStr = resStr;
+				try
+				{
+					std::string sqlitePath = getExecPath();
+					sqlitePath += "/data/test.db";
+					SQLite::Database db(sqlitePath, SQLite::OPEN_READWRITE | SQLite::OPEN_CREATE);
+
+					SQLite::Statement query(db, "INSERT INTO k8sevents VALUES (?, ?)");
+					size_t pos = 0;
+
+					while ((pos = resStr.find_first_of("\n")) != std::string::npos)
+					{
+						std::string filename = getCurrentTimeStamp();
+						std::string dataSql = resStr.substr(0, pos);
+
+						if (pos +1 < resStr.size())
+						{
+							resStr = resStr.substr(pos + 1, std::string::npos);
+						}
+						else
+						{
+							resStr.clear();
+						}
+						std::cerr << filename << " " << dataSql << std::endl;
+						if (!dataSql.empty())
+						{
+							json resData;
+							std::stringstream ss(dataSql);
+							resData << ss;
+							SQLite::bind(query, filename, resData.dump());
+							int nb = query.exec();
+						}
+
+					}
+				}
+				catch (const std::exception& e)
+				{
+					std::cerr << e.what() << std::endl;
+				}
+			});
+			if (pICurlHttpClient->get(urlObj))
+			{
+				std::string filename = getCurrentTimeStamp();
+			}
+			pICurlHttpClient->setResponseCallBack();
 		}
 	}
+
+	//std::string resourceVersion;
+	////GET  /api/v1/events
+	//{
+	//	std::string tmpUrl = url;
+	//	std::string path = "/api/v1/events";
+	//	tmpUrl += path;
+
+	//	//delete
+	//	if (pICurlHttpClient->get(tmpUrl))
+	//	{
+	//		std::cout << pICurlHttpClient->getResponse() << std::endl;
+	//		std::string filename = getCurrentTimeStamp();
+	//		try
+	//		{
+	//			std::stringstream ss;
+	//			ss.str(pICurlHttpClient->getResponse());
+	//			json data;
+	//			data << ss;
+	//			std::fstream f;
+	//			std::string fullpath = execDirPath;
+	//			fullpath += "/";
+	//			fullpath += "config/";
+	//			fullpath += "hhehe";
+	//			fullpath += ".json";
+	//			f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	//			f.open(fullpath, std::ios_base::out);
+	//			f << data;
+	//			resourceVersion = std::string(data["metadata"]["resourceVersion"]);
+	//		}
+	//		catch (const std::exception& e)
+	//		{
+	//			std::cerr << e.what() << std::endl;
+	//			return 0;
+	//		}
+
+	//	}
+	//}
 	
-	//GET /api/v1/watch/events
-	{
-		std::string tmpUrl = url;
-		std::string path = "/api/v1/watch/events";
-		tmpUrl += path;
-		{
-			std::pair<std::string, std::string> paramPair;
-			paramPair.first = "timeoutSeconds";
-			paramPair.second = std::to_string(60 * 5);
-			append(tmpUrl, paramPair, true);
-		}
-		
-		{
-			std::pair<std::string, std::string> paramPair;
-			paramPair.first = "resourceVersion";
-			paramPair.second = resourceVersion;
-			append(tmpUrl, paramPair);
-		}
-		{
-			std::pair<std::string, std::string> paramPair;
-			paramPair.first = "watch";
-			paramPair.second = "true";
-			append(tmpUrl, paramPair);
-		}
+	////GET /api/v1/watch/events
+	//{
+	//	std::string tmpUrl = url;
+	//	std::string path = "/api/v1/watch/events";
+	//	tmpUrl += path;
+	//	{
+	//		std::pair<std::string, std::string> paramPair;
+	//		paramPair.first = "timeoutSeconds";
+	//		paramPair.second = std::to_string(60 * 5);
+	//		append(tmpUrl, paramPair, true);
+	//	}
+	//	
+	//	{
+	//		std::pair<std::string, std::string> paramPair;
+	//		paramPair.first = "resourceVersion";
+	//		paramPair.second = resourceVersion;
+	//		append(tmpUrl, paramPair);
+	//	}
+	//	{
+	//		std::pair<std::string, std::string> paramPair;
+	//		paramPair.first = "watch";
+	//		paramPair.second = "true";
+	//		append(tmpUrl, paramPair);
+	//	}
 
-		
-		//delete
-		if (pICurlHttpClient->get(tmpUrl))
-		{
-			std::cout << pICurlHttpClient->getResponse() << std::endl;
-			std::string filename = getCurrentTimeStamp();
-			try
-			{
-				std::stringstream ss;
-				ss.str(pICurlHttpClient->getResponse());
-				json data;
-				data << ss;
-				std::fstream f;
-				std::string fullpath = execDirPath;
-				fullpath += "/";
-				fullpath += "config/";
-				fullpath += "hhehe_watch";
-				fullpath += ".json";
-				f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
-				f.open(fullpath, std::ios_base::out);
-				f << data;
-				
-			}
-			catch (const std::exception& e)
-			{
-				std::cerr << e.what() << std::endl;
-				return 0;
-			}
+	//	
+	//	//delete
+	//	if (pICurlHttpClient->get(tmpUrl))
+	//	{
+	//		std::cout << pICurlHttpClient->getResponse() << std::endl;
+	//		std::string filename = getCurrentTimeStamp();
+	//		try
+	//		{
+	//			std::stringstream ss;
+	//			ss.str(pICurlHttpClient->getResponse());
+	//			json data;
+	//			data << ss;
+	//			std::fstream f;
+	//			std::string fullpath = execDirPath;
+	//			fullpath += "/";
+	//			fullpath += "config/";
+	//			fullpath += "hhehe_watch";
+	//			fullpath += ".json";
+	//			f.exceptions(std::ios_base::failbit | std::ios_base::badbit);
+	//			f.open(fullpath, std::ios_base::out);
+	//			f << data;
+	//			
+	//		}
+	//		catch (const std::exception& e)
+	//		{
+	//			std::cerr << e.what() << std::endl;
+	//			return 0;
+	//		}
 
-		}
-	}
-	releaseCurlHttpClient(pICurlHttpClient);
+	//	}
+	//}
+	//releaseCurlHttpClient(pICurlHttpClient);
 }

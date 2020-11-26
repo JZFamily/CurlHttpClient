@@ -6,6 +6,7 @@ set(OUTPUT_NAME "CurlHttpClientTestK8s")
 include_directories(${CURL_INCLUDE_PATH})
 include_directories(${BOOST_INCLUDE_PATH})
 include_directories(${NLOHMANN_INCLUDE_PATH})
+include_directories(${SQLITECPP_INCLUDE_PATH})
 include_directories("${PROJECT_SOURCE_DIR}/include")
 #搜索文件，并设置工程目录
 file(GLOB PUBLICS  "${PROJECT_SOURCE_DIR}/include/*.h")
@@ -25,6 +26,12 @@ ${HEADERS}
 ${SOURCES}
 )
 link_directories(${BOOST_LIBRARY_PATH})
+
+IF(WIN32)
+	link_libraries("${SQLITECPP_LIBRARY_PATH}/SQLiteCpp.lib")
+	link_libraries("${SQLITE_LIBRARY_PATH}/sqlite3.lib")
+ENDIF()
+
 #作为动态库
 add_executable(${target} ${ALL_LIST})
 

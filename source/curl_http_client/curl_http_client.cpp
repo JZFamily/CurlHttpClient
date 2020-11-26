@@ -45,21 +45,28 @@ CurlHttpClient::~CurlHttpClient()
 
 size_t CurlHttpClient::write_callback(char * ptr, size_t size, size_t nmemb, void * userdata)
 {
-	std::string *puserdata = (std::string *)userdata;
+	ResponsePack *puserdata = (ResponsePack *)userdata;
 	if (puserdata == nullptr)
 	{
 		return 0;
 	}
 	size_t realsize = size * nmemb;
-	puserdata->append(ptr, realsize);
-	std::cerr << *puserdata << std::endl;
+	puserdata->first.append(ptr, realsize);
+	//std::cerr << *puserdata << std::endl;
+	if (nullptr != puserdata->second)
+	{
+		std::string res;
+		res.append(ptr,realsize);
+		puserdata->second(res, puserdata->first);
+	}
 	return realsize;
 }
 
 bool CurlHttpClient::setResData()
 {
 	CURLcode ret = CURLE_OK;
-	m_resData.clear();
+	m_resData.first.clear();
+	//m_resData.second = nullptr;
 	ret = curl_easy_setopt(m_pHandle, CURLOPT_WRITEDATA, &m_resData);
 	if (ret != CURLE_OK)
 	{
@@ -144,6 +151,15 @@ bool CurlHttpClient::setCert(const std::string & certPath)
 		ret = curl_easy_setopt(m_pHandle, CURLOPT_CAINFO, certPath.c_str());
 	}
 
+	return ret == CURLE_OK ? true : false;
+}
+
+bool CurlHttpClient::setTCPKeepAlive(bool enable, long delay, long interwal)
+{
+	CURLcode ret = CURLE_OK;
+	ret = curl_easy_setopt(m_pHandle, CURLOPT_TCP_KEEPALIVE, enable?1:0);
+	curl_easy_setopt(m_pHandle, CURLOPT_TCP_KEEPIDLE, delay);
+	curl_easy_setopt(m_pHandle, CURLOPT_TCP_KEEPINTVL, interwal);
 	return ret == CURLE_OK ? true : false;
 }
 
